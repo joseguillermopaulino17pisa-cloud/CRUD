@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MI GESTOR DE TAREAS</title>
+
+
+  <style>
+
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; padding: 0; font-family: Arial, sans-serif; background: #913333; }
+
+
+
+    #app {
+      width: 320px;
+      margin: 40px auto;        
+      background: #fff;
+      padding: 14px;
+      border: 1px solid #bbb;
+      border-radius: 2px;
+    }
+
+    h3 { margin: 0 0 12px 0; font-size: 20px; }
+
+    .form-row { display: inline-flex; width: 100%; gap: 6px; align-items: center; }
+    .form-row input {
+      flex: 1;
+      padding: 6px;
+      border: 1px solid #bbb;
+      border-radius: 2px;
+      font-size: 14px;
+    }
+    .form-row button {
+      padding: 6px 8px;
+      border: 1px solid #999;
+      background: #fff;
+      cursor: pointer;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+
+
+
+    ul { list-style: none; padding: 0; margin: 14px 0 0 0; }
+
+
+
+    li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: #ddd;
+      padding: 6px;
+      margin-bottom: 8px;
+      border-radius: 2px;
+    }
+
+
+
+    li .texto {
+      display: inline-block;
+      max-width: 180px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 14px;
+    }
+
+
+
+    li .btns { display: inline-flex; gap: 6px; align-items: center; }
+    li .btns button {
+      padding: 4px 6px;
+      font-size: 13px;
+      border-radius: 3px;
+      border: 1px solid #999;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .hecha { text-decoration: line-through; opacity: 0.9; }
+
+
+  </style>
+
+
+
+
+</head>
+<body>
+  <div id="app">
+    <h3>MI GESTOR DE TAREAS</h3>
+
+    <div class="form-row">
+      <input id="texto" placeholder="Escribe una tarea..." />
+      <button id="btnAgregar">Añadir</button>
+    </div>
+
+    <ul id="lista"></ul>
+  </div>
+
+  <script>
+    
+
+    const texto = document.getElementById('texto');
+    const lista = document.getElementById('lista');
+    const btnAgregar = document.getElementById('btnAgregar');
+
+
+
+    
+
+    let tareas = JSON.parse(localStorage.getItem('tareas') || '[]');
+    let editIndex = null;
+
+  
+
+    mostrarTareas();
+
+    
+
+    btnAgregar.onclick = function () {
+      const val = texto.value.trim();
+      if (!val) return;
+
+
+      if (editIndex !== null) {
+        tareas[editIndex].nombre = val;
+        editIndex = null;
+        btnAgregar.textContent = 'Añadir';
+      } else {
+        tareas.push({ nombre: val, hecha: false });
+      }
+
+      texto.value = '';
+      guardar();
+      mostrarTareas();
+    };
+
+
+
+    
+
+    function mostrarTareas() {
+      lista.innerHTML = '';
+      tareas.forEach((t, i) => {
+        const li = document.createElement('li');
+        li.className = t.hecha ? 'hecha' : '';
+        li.innerHTML = 
+          '<span class="texto">' + escapeHtml(t.nombre) + '</span>' +
+          '<div class="btns">' +
+            '<button type="button" data-i="'+i+'" class="edit">✏</button>' +
+            '<button type="button" data-i="'+i+'" class="mark">✔</button>' +
+            '<button type="button" data-i="'+i+'" class="del">✖</button>' +
+          '</div>';
+        lista.appendChild(li);
+      });
+
+
+      
+
+      document.querySelectorAll('#lista .edit').forEach(b => b.onclick = e => editar(+e.target.dataset.i));
+      document.querySelectorAll('#lista .mark').forEach(b => b.onclick = e => marcar(+e.target.dataset.i));
+      document.querySelectorAll('#lista .del').forEach(b => b.onclick = e => borrar(+e.target.dataset.i));
+    }
+
+
+    function editar(i) {
+      texto.value = tareas[i].nombre;
+      editIndex = i;
+      btnAgregar.textContent = 'Guardar';
+      texto.focus();
+    }
+
+
+    function marcar(i) {
+      tareas[i].hecha = !tareas[i].hecha;
+      guardar();
+      mostrarTareas();
+    }
+
+
+    function borrar(i) {
+      tareas.splice(i,1);
+      guardar();
+      mostrarTareas();
+    }
+
+
+    function guardar() {
+      localStorage.setItem('tareas', JSON.stringify(tareas));
+    }
+
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+  </script>
+</body>
+</html>
