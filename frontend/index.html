@@ -1,11 +1,32 @@
-<h1>Mis tareas</h1>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-<form id="taskForm">
-  <input type="text" id="titulo" placeholder="Título" required />
-  <input type="text" id="descripcion" placeholder="Descripción" required />
-  <button type="submit">Agregar</button>
-</form>
+    <div class="app">
+        <header>
+            <h1>Gestor</h1>
+            <p>Agrega la tarea:</p>
+        </header>
 
-<ul id="listaTareas"></ul>
+        <div class="task-box">
+            <input 
+                type="text" 
+                id="taskInput" 
+                placeholder="Nueva tarea..." 
+                autocomplete="off"
+            >
+            <button id="addBtn">+</button>
+        </div>
 
-<script src="app.js"></script>
+        <ul id="taskList"></ul>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
