@@ -1,48 +1,16 @@
 {
   "users": [
     {
-      "username": "joseguillermo@gmail.com",
-      "password": "12345"
-    },
-    {
-      "username": "mariagga@gmail.com",
-      "password": "1990"
-    },
-    {
-      "username": "agapitoalmonte@gmail.com",
-      "password": "98765"
-    },
-    {
-      "username": "amaurisgh@gmail.com",
-      "password": "445amauri"
-    },
-    {
-      "username": "rosmery@gmail.com",
-      "password": "lamana4"
+      "username": "joseguillermopaulino@gmail.com",
+      "password": "$2b$10$P90zJSg9yfQvAHF/EsTeJeTssFcFv9R39mToUlOCxoBqfjLLqJeW."
     }
   ],
   "tasks": [
     {
-      "id": 1777566784847,
-      "text": "matematica",
-      "username": "mariagga@gmail.com"
-    },
-    {
-      "id": 1777657053638,
-      "text": "ed",
-      "username": "joseguillermo@gmail.com",
+      "id": 1778175955117,
+      "text": "fisica",
+      "username": "joseguillermopaulino@gmail.com",
       "completed": false
-    },
-    {
-      "id": 1777657249461,
-      "text": "w2w",
-      "username": "joseguillermo@gmail.com",
-      "completed": true
-    },
-    {
-      "id": 1777664648733,
-      "text": "ds",
-      "username": "rosmery@gmail.com"
     }
   ]
 }
