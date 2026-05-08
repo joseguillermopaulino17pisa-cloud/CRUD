@@ -1,15 +1,32 @@
-function auth(req, res, next) {
-  const username = req.headers.username;
+const jwt = require("jsonwebtoken");
 
-  if (!username) {
+module.exports = (req, res, next) => {
+
+  const token = req.headers.authorization;
+
+  if (!token) {
     return res.status(401).json({
-      msg: "No autorizado"
+      msg: "Token requerido"
     });
   }
 
-  req.username = username;
+  try {
 
-  next();
-}
+    const decoded = jwt.verify(
+      token,
+      "secreto123"
+    );
 
-module.exports = auth;
+    req.username = decoded.username;
+
+    next();
+
+  } catch {
+
+    return res.status(401).json({
+      msg: "Token inválido"
+    });
+
+  }
+
+};

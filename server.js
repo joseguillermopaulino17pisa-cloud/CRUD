@@ -1,3 +1,6 @@
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
+
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
@@ -14,15 +17,14 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
 
 app.use(express.static(path.join(__dirname, "public"), {
   index: false
 }));
 
 // Crear tablas
-(async () => {
-  await createTables();
-})();
+createTables();
 
 
 // 👉 Login page
@@ -139,10 +141,20 @@ app.post("/login", async (req, res) => {
     });
   }
 
-  res.json({
-    msg: "Login exitoso",
-    username
-  });
+ const token = jwt.sign(
+  { username },
+  "secreto123",
+  { expiresIn: "1h" }
+);
+
+res.cookie("token", token, {
+  httpOnly: true
+});
+
+res.json({
+  msg: "Login exitoso",
+  token
+});
 
 });
 

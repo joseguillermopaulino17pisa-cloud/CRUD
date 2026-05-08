@@ -1,26 +1,44 @@
 const URL = "http://localhost:3000";
 
 let user = localStorage.getItem("user");
+let token = localStorage.getItem("token");
 
 /* Login */
 async function login() {
+
   const username = document.getElementById("user").value;
   const password = document.getElementById("pass").value;
 
   const res = await fetch(URL + "/login", {
+
     method: "POST",
+
     headers: {
       "Content-Type":"application/json"
     },
-    body: JSON.stringify({ username, password })
+
+    body: JSON.stringify({
+      username,
+      password
+    })
+
   });
 
+  const data = await res.json();
+
   if (res.ok) {
+
     localStorage.setItem("user", username);
+    localStorage.setItem("token", data.token);
+
     window.location = "/tasks-page";
+
   } else {
+
     alert("Error al iniciar sesión");
+
   }
+
 }
 
 
@@ -62,16 +80,15 @@ async function register() {
 }
 
 
-
 /* Cargar tareas */
 async function loadTasks() {
 
-  user = localStorage.getItem("user");
-
   const res = await fetch(URL + "/tasks", {
+
     headers: {
-      username: user
+      authorization: token
     }
+
   });
 
   const data = await res.json();
@@ -96,20 +113,19 @@ async function loadTasks() {
       </div>
     `;
 
-    // Completar tarea
     li.querySelector(".complete").onclick = () =>
       toggleTask(t.id, t.completed);
 
-    // Editar tarea
     li.querySelector(".edit").onclick = () =>
       editTask(t.id, t.text);
 
-    // Eliminar tarea
     li.querySelector(".delete").onclick = () =>
       deleteTask(t.id);
 
     list.appendChild(li);
+
   });
+
 }
 
 
@@ -120,32 +136,30 @@ async function addTask() {
 
   const text = input.value;
 
-  user = localStorage.getItem("user");
-
   if (!text) {
     return alert("Escribe una tarea");
   }
 
-  if (!user) {
-    return alert("Usuario no detectado");
-  }
-
   await fetch(URL + "/tasks", {
+
     method: "POST",
+
     headers: {
       "Content-Type":"application/json",
-      username: user
+      authorization: token
     },
+
     body: JSON.stringify({
       id: Date.now(),
-      text,
-      username: user
+      text
     })
+
   });
 
   input.value = "";
 
   loadTasks();
+
 }
 
 
@@ -159,17 +173,22 @@ async function editTask(id, oldText) {
   }
 
   await fetch(URL + "/tasks/" + id, {
+
     method: "PUT",
+
     headers: {
       "Content-Type":"application/json",
-      username: user
+      authorization: token
     },
+
     body: JSON.stringify({
       text: newText
     })
+
   });
 
   loadTasks();
+
 }
 
 
@@ -177,17 +196,22 @@ async function editTask(id, oldText) {
 async function toggleTask(id, currentState) {
 
   await fetch(URL + "/tasks/" + id, {
+
     method: "PUT",
+
     headers: {
       "Content-Type":"application/json",
-      username: user
+      authorization: token
     },
+
     body: JSON.stringify({
       completed: !currentState
     })
+
   });
 
   loadTasks();
+
 }
 
 
@@ -195,34 +219,40 @@ async function toggleTask(id, currentState) {
 async function deleteTask(id) {
 
   await fetch(URL + "/tasks/" + id, {
+
     method: "DELETE",
+
     headers: {
-      username: user
+      authorization: token
     }
+
   });
 
   loadTasks();
+
 }
 
 
 /* Logout */
 function logout() {
+
   localStorage.removeItem("user");
+  localStorage.removeItem("token");
+
   window.location = "/";
+
 }
-
-
-
 
 
 /* Verificar sesión */
 window.onload = () => {
 
   user = localStorage.getItem("user");
+  token = localStorage.getItem("token");
 
   if (window.location.pathname.includes("tasks-page")) {
 
-    if (!user) {
+    if (!user || !token) {
 
       alert("Debes iniciar sesión");
 
@@ -233,6 +263,7 @@ window.onload = () => {
       loadTasks();
 
     }
-  }
-};
 
+  }
+
+};
