@@ -26,20 +26,41 @@ async function login() {
 
 /* Registro */
 async function register() {
+
   const username = document.getElementById("user").value;
   const password = document.getElementById("pass").value;
 
-  await fetch(URL + "/register", {
+  const res = await fetch(URL + "/register", {
+
     method: "POST",
+
     headers: {
       "Content-Type":"application/json"
     },
-    body: JSON.stringify({ username, password })
+
+    body: JSON.stringify({
+      username,
+      password
+    })
+
   });
 
-  alert("Cuenta creada");
-  window.location = "/";
+  const data = await res.json();
+
+  if (res.ok) {
+
+    alert("Cuenta creada");
+
+    window.location = "/";
+
+  } else {
+
+    alert(data.msg);
+
+  }
+
 }
+
 
 
 /* Cargar tareas */
@@ -191,6 +212,9 @@ function logout() {
 }
 
 
+
+
+
 /* Verificar sesión */
 window.onload = () => {
 
@@ -211,3 +235,4 @@ window.onload = () => {
     }
   }
 };
+

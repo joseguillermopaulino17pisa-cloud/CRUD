@@ -2,114 +2,183 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const bcrypt = require("bcrypt");
+
 const auth = require("./middleware/auth");
-const { readData, writeData } = require("./database");
+
+const {
+  connectDB,
+  createTables
+} = require("./database");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
 app.use(express.static(path.join(__dirname, "public"), {
   index: false
 }));
 
-// 👉 Ruta principal (login obligatorio)
+// Crear tablas
+(async () => {
+  await createTables();
+})();
+
+
+// 👉 Login page
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 
-// 👉 Bloquear acceso directo a index.html
+
+// 👉 Bloquear acceso directo
 app.get("/index.html", (req, res) => {
-  res.redirect("/"); 
+  res.redirect("/");
 });
 
-// 👉 Registro permitido
+
+// 👉 Registro
 app.get("/register", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "register.html"));
 });
 
+
+// 👉 Página tareas
 app.get("/tasks-page", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-/* registrar */
+
+
+/* =========================
+   REGISTRO
+========================= */
+
 app.post("/register", async (req, res) => {
-  const data = readData();
+
+  const db = await connectDB();
+
   const { username, password } = req.body;
 
   if (!username || !password) {
-    return res.status(400).json({ msg: "Datos incompletos" });
-  }
+  return res.status(400).json({
+    msg: "Datos incompletos"
+  });
+}
 
-  const userExists = data.users.find(u => u.username === username);
+// Validar correo
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+if (!emailRegex.test(username)) {
+  return res.status(400).json({
+    msg: "Debes ingresar un correo válido"
+  });
+}
+
+  const userExists = await db.get(
+    "SELECT * FROM users WHERE username = ?",
+    [username]
+  );
 
   if (userExists) {
-    return res.status(400).json({ msg: "Usuario ya existe" });
+    return res.status(400).json({
+      msg: "Usuario ya existe"
+    });
   }
 
-  // 🔐 Cifrar contraseña
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  data.users.push({
-    username,
-    password: hashedPassword
+  await db.run(
+    "INSERT INTO users(username, password) VALUES(?, ?)",
+    [username, hashedPassword]
+  );
+
+  res.json({
+    msg: "Usuario creado"
   });
 
-  writeData(data);
-
-  res.json({ msg: "Usuario creado" });
 });
 
-/* logear */
+
+
+/* =========================
+   LOGIN
+========================= */
+
 app.post("/login", async (req, res) => {
-  const data = readData();
+
+  const db = await connectDB();
+
   const { username, password } = req.body;
 
   if (!username || !password) {
-    return res.status(400).json({ msg: "Datos incompletos" });
+    return res.status(400).json({
+      msg: "Datos incompletos"
+    });
   }
 
-  // Buscar usuario
-  const user = data.users.find(u => u.username === username);
+  const user = await db.get(
+    "SELECT * FROM users WHERE username = ?",
+    [username]
+  );
 
   if (!user) {
-    return res.status(400).json({ msg: "Usuario no encontrado" });
+    return res.status(400).json({
+      msg: "Usuario no encontrado"
+    });
   }
 
-  // Comparar contraseña cifrada
-  const validPassword = await bcrypt.compare(password, user.password);
+  const validPassword = await bcrypt.compare(
+    password,
+    user.password
+  );
 
   if (!validPassword) {
-    return res.status(400).json({ msg: "Contraseña incorrecta" });
+    return res.status(400).json({
+      msg: "Contraseña incorrecta"
+    });
   }
 
   res.json({
     msg: "Login exitoso",
     username
   });
-});
 
-
-// 👉 Obtener tareas del usuario
-app.get("/tasks", auth, (req, res) => {
-  const data = readData();
-
-  const tasks = data.tasks
-    .filter(t => t.username === req.username)
-    .map(t => ({
-      ...t,
-      completed: t.completed || false
-    }));
-
-  res.json(tasks);
 });
 
 
 
-// 👉 Crear tareas
-app.post("/tasks", auth, (req, res) => {
+/* =========================
+   OBTENER TAREAS
+========================= */
 
-  const data = readData();
+app.get("/tasks", auth, async (req, res) => {
+
+  const db = await connectDB();
+
+  const tasks = await db.all(
+    "SELECT * FROM tasks WHERE username = ?",
+    [req.username]
+  );
+
+  const formatted = tasks.map(t => ({
+    ...t,
+    completed: !!t.completed
+  }));
+
+  res.json(formatted);
+
+});
+
+
+
+/* =========================
+   CREAR TAREA
+========================= */
+
+app.post("/tasks", auth, async (req, res) => {
+
+  const db = await connectDB();
 
   const { id, text } = req.body;
 
@@ -119,28 +188,41 @@ app.post("/tasks", auth, (req, res) => {
     });
   }
 
-  data.tasks.push({
-    id,
-    text,
-    username: req.username,
-    completed: false
-  });
-
-  writeData(data);
+  await db.run(
+    `
+    INSERT INTO tasks(id, text, completed, username)
+    VALUES(?, ?, ?, ?)
+    `,
+    [
+      id,
+      text,
+      0,
+      req.username
+    ]
+  );
 
   res.json({
     msg: "Tarea creada"
   });
+
 });
 
 
-// 👉 Actualizar tareas
 
-app.put("/tasks/:id", auth, (req, res) => {
-  const data = readData();
+/* =========================
+   ACTUALIZAR TAREA
+========================= */
+
+app.put("/tasks/:id", auth, async (req, res) => {
+
+  const db = await connectDB();
+
   const id = req.params.id;
 
-  const task = data.tasks.find(t => t.id == id);
+  const task = await db.get(
+    "SELECT * FROM tasks WHERE id = ?",
+    [id]
+  );
 
   if (!task) {
     return res.status(404).json({
@@ -148,85 +230,79 @@ app.put("/tasks/:id", auth, (req, res) => {
     });
   }
 
-  // 🔐 Verificar dueño
   if (task.username !== req.username) {
     return res.status(403).json({
       msg: "No autorizado"
     });
   }
 
-  data.tasks = data.tasks.map(t =>
-    t.id == id ? { ...t, ...req.body } : t
-  );
+  const newText =
+    req.body.text !== undefined
+      ? req.body.text
+      : task.text;
 
-  writeData(data);
+  const newCompleted =
+    req.body.completed !== undefined
+      ? req.body.completed
+      : task.completed;
+
+  await db.run(
+    `
+    UPDATE tasks
+    SET text = ?, completed = ?
+    WHERE id = ?
+    `,
+    [
+      newText,
+      newCompleted ? 1 : 0,
+      id
+    ]
+  );
 
   res.json({
     msg: "Tarea actualizada"
   });
+
 });
 
 
-app.put("/tasks/:id", auth, (req, res) => {
-  const data = readData();
+
+/* =========================
+   ELIMINAR TAREA
+========================= */
+
+app.delete("/tasks/:id", auth, async (req, res) => {
+
+  const db = await connectDB();
+
   const id = req.params.id;
 
-  const task = data.tasks.find(t => t.id == id);
-
-  if (!task) {
-    return res.status(404).json({
-      msg: "Tarea no encontrada"
-    });
-  }
-
-  if (task.username !== req.username) {
-    return res.status(403).json({
-      msg: "No autorizado"
-    });
-  }
-
-  data.tasks = data.tasks.map(t =>
-    t.id == id ? { ...t, ...req.body } : t
+  const task = await db.get(
+    "SELECT * FROM tasks WHERE id = ?",
+    [id]
   );
 
-  writeData(data);
-
-  res.json({
-    msg: "Tarea actualizada"
-  });
-});
-
-
-
-/* Eliminar tareas */
-app.delete("/tasks/:id", auth, (req, res) => {
-
-  const data = readData();
-
-  const id = req.params.id;
-
-  const task = data.tasks.find(t => t.id == id);
-
   if (!task) {
     return res.status(404).json({
       msg: "Tarea no encontrada"
     });
   }
 
-  // 🔐 Verificar dueño
   if (task.username !== req.username) {
     return res.status(403).json({
       msg: "No autorizado"
     });
   }
 
-  data.tasks = data.tasks.filter(t => t.id != id);
-
-  writeData(data);
+  await db.run(
+    "DELETE FROM tasks WHERE id = ?",
+    [id]
+  );
 
   res.json({
     msg: "Tarea eliminada"
   });
+
 });
 
 

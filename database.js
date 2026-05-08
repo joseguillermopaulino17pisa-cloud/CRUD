@@ -1,15 +1,43 @@
-const fs = require("fs");
+const sqlite3 = require("sqlite3");
+const { open } = require("sqlite");
 
-const readData = () => {
-  try {
-    return JSON.parse(fs.readFileSync("db.json"));
-  } catch {
-    return { users: [], tasks: [] };
-  }
+async function connectDB() {
+
+  return open({
+    filename: "./database.db",
+    driver: sqlite3.Database
+  });
+
+}
+
+async function createTables() {
+
+  const db = await connectDB();
+
+  await db.exec(`
+  
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE,
+      password TEXT
+    );
+
+  `);
+
+  await db.exec(`
+  
+    CREATE TABLE IF NOT EXISTS tasks (
+      id INTEGER PRIMARY KEY,
+      text TEXT,
+      completed INTEGER,
+      username TEXT
+    );
+
+  `);
+
+}
+
+module.exports = {
+  connectDB,
+  createTables
 };
-
-const writeData = (data) => {
-  fs.writeFileSync("db.json", JSON.stringify(data, null, 2));
-};
-
-module.exports = { readData, writeData };
