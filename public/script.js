@@ -1,7 +1,6 @@
 const URL = "http://localhost:3000";
 
 let user = localStorage.getItem("user");
-let token = localStorage.getItem("token");
 
 /* Login */
 async function login() {
@@ -17,6 +16,8 @@ async function login() {
       "Content-Type":"application/json"
     },
 
+    credentials: "include",
+
     body: JSON.stringify({
       username,
       password
@@ -29,13 +30,12 @@ async function login() {
   if (res.ok) {
 
     localStorage.setItem("user", username);
-    localStorage.setItem("token", data.token);
 
     window.location = "/tasks-page";
 
   } else {
 
-    alert("Error al iniciar sesión");
+    alert(data.msg);
 
   }
 
@@ -85,9 +85,7 @@ async function loadTasks() {
 
   const res = await fetch(URL + "/tasks", {
 
-    headers: {
-      authorization: token
-    }
+    credentials: "include"
 
   });
 
@@ -144,9 +142,10 @@ async function addTask() {
 
     method: "POST",
 
+    credentials: "include",
+
     headers: {
-      "Content-Type":"application/json",
-      authorization: token
+      "Content-Type":"application/json"
     },
 
     body: JSON.stringify({
@@ -176,9 +175,10 @@ async function editTask(id, oldText) {
 
     method: "PUT",
 
+    credentials: "include",
+
     headers: {
-      "Content-Type":"application/json",
-      authorization: token
+      "Content-Type":"application/json"
     },
 
     body: JSON.stringify({
@@ -199,9 +199,10 @@ async function toggleTask(id, currentState) {
 
     method: "PUT",
 
+    credentials: "include",
+
     headers: {
-      "Content-Type":"application/json",
-      authorization: token
+      "Content-Type":"application/json"
     },
 
     body: JSON.stringify({
@@ -222,9 +223,7 @@ async function deleteTask(id) {
 
     method: "DELETE",
 
-    headers: {
-      authorization: token
-    }
+    credentials: "include"
 
   });
 
@@ -237,7 +236,8 @@ async function deleteTask(id) {
 function logout() {
 
   localStorage.removeItem("user");
-  localStorage.removeItem("token");
+
+  document.cookie = "token=; Max-Age=0";
 
   window.location = "/";
 
@@ -248,11 +248,10 @@ function logout() {
 window.onload = () => {
 
   user = localStorage.getItem("user");
-  token = localStorage.getItem("token");
 
   if (window.location.pathname.includes("tasks-page")) {
 
-    if (!user || !token) {
+    if (!user) {
 
       alert("Debes iniciar sesión");
 
