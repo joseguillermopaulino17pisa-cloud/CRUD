@@ -45,8 +45,8 @@ app.get("/register", (req, res) => {
 });
 
 
-// 👉 Página tareas
-app.get("/tasks-page", (req, res) => {
+// 👉 Página tareas protegida
+app.get("/tasks-page", auth, (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
