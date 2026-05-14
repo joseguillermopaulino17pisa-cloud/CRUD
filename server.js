@@ -51,7 +51,6 @@ app.get("/tasks-page", auth, (req, res) => {
 });
 
 
-
 /* =========================
    REGISTRO
 ========================= */
@@ -149,6 +148,12 @@ app.post("/login", async (req, res) => {
 
 res.cookie("token", token, {
   httpOnly: true
+});
+
+res.cookie("token", token, {
+  httpOnly: true,
+  secure: false,
+  maxAge: 3600000
 });
 
 res.json({
